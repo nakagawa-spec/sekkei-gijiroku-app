@@ -1,0 +1,14 @@
+{
+  "name": "HH設計打合せ議事録",
+  "short_name": "設計議事録",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1e5f74",
+  "theme_color": "#1e5f74",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-1024.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }
+  ]
+}

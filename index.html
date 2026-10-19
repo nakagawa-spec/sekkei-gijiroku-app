@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HH設計打合せ議事録</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="設計議事録">
+<meta name="theme-color" content="#1e5f74">
+<style>
+  :root { --navy:#1e5f74; --green:#2e8b57; --gray:#6b7280; --line:#d1d5db; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:#f3f5f8; color:#222; }
+  header { background:var(--navy); color:#fff; padding:14px 16px; font-size:18px; font-weight:bold; }
+  main { padding:24px 16px; max-width:520px; margin:0 auto; text-align:center; }
+  img.logo { width:96px; height:96px; border-radius:22px; margin:8px auto 16px; display:block; }
+  p { font-size:16px; line-height:1.7; margin:10px 0; }
+  .small { font-size:13px; color:var(--gray); }
+  a.btn { display:block; width:100%; margin-top:18px; padding:15px; font-size:18px; font-weight:bold; color:#fff; background:var(--green); border:0; border-radius:10px; text-decoration:none; }
+  a.sub { background:#fff; color:var(--navy); border:1px solid var(--line); font-size:15px; padding:12px; }
+  ol { text-align:left; font-size:16px; line-height:1.8; background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 12px 12px 2em; }
+  .hide { display:none; }
+</style>
+</head>
+<body>
+<header>HH設計打合せ議事録</header>
+<main>
+  <img class="logo" src="apple-touch-icon.png" alt="">
+
+  <!-- 開いています -->
+  <section id="opening">
+    <p><b>アプリを開いています…</b></p>
+    <a class="btn sub" id="openNow" href="#">開かないときはここを押す</a>
+  </section>
+
+  <!-- Safariで開いた（ホーム画面に追加してもらう） -->
+  <section id="install" class="hide">
+    <p><b>先にホーム画面に追加してください</b></p>
+    <ol>
+      <li>画面下の <b>共有ボタン</b>（□に↑）を押す</li>
+      <li><b>「ホーム画面に追加」</b>を押す</li>
+      <li>右上の <b>「追加」</b>を押す</li>
+      <li>ホーム画面の <b>「設計議事録」</b>から開き、メールアドレスを登録する</li>
+    </ol>
+    <p class="small">iPhoneでは、Safariとホーム画面のアイコンで登録が別々になります。<br>アイコンから開いて登録すると、次からは登録なしで使えます。</p>
+    <a class="btn sub" id="openInstall" href="#">追加せずにこのまま開く</a>
+  </section>
+
+  <!-- LINEなどのアプリ内で開いた（Safari・Chromeで開き直してもらう） -->
+  <section id="inapp" class="hide">
+    <p><b>このままでは使えません。<br>ブラウザで開き直してください</b></p>
+    <ol>
+      <li>画面の右上（または右下）の <b>「…」</b> や <b>共有ボタン</b> を押す</li>
+      <li><b>「ブラウザで開く」</b>（iPhoneは「Safariで開く」）を押す</li>
+    </ol>
+    <p class="small">LINEやメールのアプリの中で開くと、ホーム画面に追加できず、登録も覚えておけません。</p>
+  </section>
+</main>
+
+<script>
+// GASのWebアプリ（ログインなしで開ける）。デプロイし直してもURLが変わらないように、同じデプロイIDを更新している
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw_9zIZ2V8jw7a4jA184KGPquSaM9EqxCaHCMafEcc8zWfj7Eg-wCqd61mJNqicQkBg/exec';
+const $ = id => document.getElementById(id);
+const show = id => ['opening', 'install', 'inapp'].forEach(s => $(s).classList.toggle('hide', s !== id));
+['openNow', 'openInstall'].forEach(id => $(id).href = GAS_URL);
+
+const ua = navigator.userAgent;
+const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);   // 「PC版サイトを表示」中のiPhone・iPadも含める
+const inLine = / Line\//i.test(ua);
+const inApp = inLine || /FBAN|FBAV|Instagram|Chatwork|GSA\//i.test(ua);   // LINE・Facebook・Instagram・Chatwork・Googleアプリの中のブラウザ
+
+if (inApp) {
+  if (inLine && !/openExternalBrowser=1/.test(location.search)) location.replace(location.pathname + '?openExternalBrowser=1');   // LINEはこの印を付けると外のブラウザで開き直す
+  else show('inapp');
+} else if (isIOS && !standalone) {
+  show('install');
+} else {
+  location.href = GAS_URL;
+}
+</script>
+</body>
+</html>
