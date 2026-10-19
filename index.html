@@ -39,14 +39,21 @@
   <!-- Safariで開いた（ホーム画面に追加してもらう） -->
   <section id="install" class="hide">
     <p><b>先にホーム画面に追加してください</b></p>
-    <ol>
+    <ol id="stepsIOS">
       <li>画面下の <b>共有ボタン</b>（□に↑）を押す</li>
       <li><b>「ホーム画面に追加」</b>を押す</li>
       <li>右上の <b>「追加」</b>を押す</li>
       <li>ホーム画面の <b>「設計議事録」</b>から開き、メールアドレスを登録する</li>
     </ol>
-    <p class="small">iPhoneでは、Safariとホーム画面のアイコンで登録が別々になります。<br>アイコンから開いて登録すると、次からは登録なしで使えます。</p>
-    <a class="btn sub" id="openInstall" href="#">追加せずにこのまま開く</a>
+    <ol id="stepsAndroid" class="hide">
+      <li>画面右上の <b>「⋮」</b>を押す</li>
+      <li><b>「ホーム画面に追加」</b>を押す（「アプリをインストール」と出たらそれを押す）</li>
+      <li><b>「追加」</b>（または「インストール」）を押す</li>
+      <li>ホーム画面の <b>「設計議事録」</b>から開き、メールアドレスを登録する</li>
+    </ol>
+    <p class="small">必ず <b>このページを開いたまま</b> 追加してください。<br>アプリの画面に移ってから追加すると、アイコンが付きません。</p>
+    <p class="small">ブラウザとホーム画面のアイコンでは、登録が別々になります。<br>アイコンから開いて登録すると、次からは登録なしで使えます。</p>
+    <a class="btn sub" id="openInstall" href="#">追加せずにこのまま開く（パソコンなど）</a>
   </section>
 
   <!-- LINEなどのアプリ内で開いた（Safari・Chromeで開き直してもらう） -->
@@ -76,7 +83,8 @@ const inApp = inLine || /FBAN|FBAV|Instagram|Chatwork|GSA\//i.test(ua);   // LIN
 if (inApp) {
   if (inLine && !/openExternalBrowser=1/.test(location.search)) location.replace(location.pathname + '?openExternalBrowser=1');   // LINEはこの印を付けると外のブラウザで開き直す
   else show('inapp');
-} else if (isIOS && !standalone) {
+} else if (!standalone) {   // ホーム画面のアイコンから開いたとき以外は、先に追加してもらう（アプリの画面で追加するとアイコンが付かない）
+  if (!isIOS) { $('stepsIOS').classList.add('hide'); $('stepsAndroid').classList.remove('hide'); }
   show('install');
 } else {
   location.href = GAS_URL;
