@@ -9,24 +9,26 @@
 <link rel="icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="設計議事録">
-<meta name="theme-color" content="#1e5f74">
+<meta name="theme-color" content="#ffffff">
 <style>
   :root { --navy:#1e5f74; --green:#2e8b57; --gray:#6b7280; --line:#d1d5db; }
   * { box-sizing:border-box; }
   body { margin:0; font-family:-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif; background:#f3f5f8; color:#222; }
-  header { background:var(--navy); color:#fff; padding:14px 16px; font-size:18px; font-weight:bold; }
+  header { background:#fff; border-bottom:4px solid var(--navy); padding:12px 16px 10px; }
+  header img { height:22px; display:block; }
+  header div { color:var(--navy); font-size:17px; font-weight:bold; margin-top:6px; }
   main { padding:24px 16px; max-width:520px; margin:0 auto; text-align:center; }
   img.logo { width:96px; height:96px; border-radius:22px; margin:8px auto 16px; display:block; }
   p { font-size:16px; line-height:1.7; margin:10px 0; }
   .small { font-size:13px; color:var(--gray); }
-  a.btn { display:block; width:100%; margin-top:18px; padding:15px; font-size:18px; font-weight:bold; color:#fff; background:var(--green); border:0; border-radius:10px; text-decoration:none; }
-  a.sub { background:#fff; color:var(--navy); border:1px solid var(--line); font-size:15px; padding:12px; }
+  button, a.btn { display:block; width:100%; margin-top:18px; padding:15px; font-size:18px; font-weight:bold; color:#fff; background:var(--green); border:0; border-radius:10px; text-decoration:none; font-family:inherit; }
+  button.sub, a.sub { background:#fff; color:var(--navy); border:1px solid var(--line); font-size:15px; padding:12px; }
   ol { text-align:left; font-size:16px; line-height:1.8; background:#fff; border:1px solid var(--line); border-radius:10px; padding:12px 12px 12px 2em; }
   .hide { display:none; }
 </style>
 </head>
 <body>
-<header>HH設計打合せ議事録</header>
+<header><img src="logo.png" alt="HEALTHY HOME"><div>設計打合せ議事録</div></header>
 <main>
   <img class="logo" src="apple-touch-icon.png" alt="">
 
@@ -36,7 +38,7 @@
     <a class="btn sub" id="openNow" href="#">開かないときはここを押す</a>
   </section>
 
-  <!-- Safariで開いた（ホーム画面に追加してもらう） -->
+  <!-- ブラウザで開いた（ホーム画面に追加してもらう） -->
   <section id="install" class="hide">
     <p><b>先にホーム画面に追加してください</b></p>
     <ol id="stepsIOS">
@@ -52,7 +54,7 @@
       <li>ホーム画面の <b>「設計議事録」</b>から開き、メールアドレスを登録する</li>
     </ol>
     <p class="small">必ず <b>このページを開いたまま</b> 追加してください。<br>アプリの画面に移ってから追加すると、アイコンが付きません。</p>
-    <p class="small">ブラウザとホーム画面のアイコンでは、登録が別々になります。<br>アイコンから開いて登録すると、次からは登録なしで使えます。</p>
+    <p class="small">ブラウザとホーム画面のアイコンでは、登録が別々になります。<br>アイコンから開いて登録すると、次からは登録なしで使えます。<br>iPhoneは、ホーム画面のアイコンから開いたときだけ通知が届きます。</p>
     <a class="btn sub" id="openInstall" href="#">追加せずにこのまま開く（パソコンなど）</a>
   </section>
 
@@ -65,30 +67,83 @@
     </ol>
     <p class="small">LINEやメールのアプリの中で開くと、ホーム画面に追加できず、登録も覚えておけません。</p>
   </section>
+
+  <!-- 通知の許可 -->
+  <section id="ask" class="hide">
+    <p><b>議事録ができたら<br>スマホにお知らせしますか？</b></p>
+    <p class="small">通知にはお客様の名前は出ません。<br>「議事録が届きました」とだけ表示されます。</p>
+    <button id="allow">通知を受け取る</button>
+    <button class="sub" id="skip">通知なしで使う</button>
+  </section>
+
+  <!-- 通知が拒否されている -->
+  <section id="denied" class="hide">
+    <p>通知がオフになっています。</p>
+    <p class="small">受け取りたいときは、スマホの「設定」→「通知」→「設計議事録」で<br>「通知を許可」をオンにしてください。</p>
+    <a class="btn" id="openDenied" href="#">アプリを開く</a>
+  </section>
 </main>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js"></script>
+<script src="config.js"></script>
 <script>
-// GASのWebアプリ（ログインなしで開ける）。デプロイし直してもURLが変わらないように、同じデプロイIDを更新している
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbw_9zIZ2V8jw7a4jA184KGPquSaM9EqxCaHCMafEcc8zWfj7Eg-wCqd61mJNqicQkBg/exec';
 const $ = id => document.getElementById(id);
-const show = id => ['opening', 'install', 'inapp'].forEach(s => $(s).classList.toggle('hide', s !== id));
-['openNow', 'openInstall'].forEach(id => $(id).href = GAS_URL);
+const show = id => ['opening', 'install', 'inapp', 'ask', 'denied'].forEach(s => $(s).classList.toggle('hide', s !== id));
+const store = { get: k => { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+                set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+['openNow', 'openInstall', 'openDenied'].forEach(id => $(id).href = GAS_URL);
 
 const ua = navigator.userAgent;
 const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 const isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);   // 「PC版サイトを表示」中のiPhone・iPadも含める
 const inLine = / Line\//i.test(ua);
 const inApp = inLine || /FBAN|FBAV|Instagram|Chatwork|GSA\//i.test(ua);   // LINE・Facebook・Instagram・Chatwork・Googleアプリの中のブラウザ
+const pushOK = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
-if (inApp) {
-  if (inLine && !/openExternalBrowser=1/.test(location.search)) location.replace(location.pathname + '?openExternalBrowser=1');   // LINEはこの印を付けると外のブラウザで開き直す
-  else show('inapp');
-} else if (!standalone) {   // ホーム画面のアイコンから開いたとき以外は、先に追加してもらう（アプリの画面で追加するとアイコンが付かない）
-  if (!isIOS) { $('stepsIOS').classList.add('hide'); $('stepsAndroid').classList.remove('hide'); }
-  show('install');
-} else {
-  location.href = GAS_URL;
+// GASのアプリを開く。通知の宛先があれば一緒に渡す（アプリ側で、登録した端末にひも付けて保存する）
+function openApp(token) {
+  const url = GAS_URL + (token ? '?fcm=' + encodeURIComponent(token) : '');
+  ['openNow', 'openDenied'].forEach(id => $(id).href = url);
+  show('opening');
+  location.href = url;
 }
+
+async function getToken() {
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const reg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+  return firebase.messaging().getToken({ vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+}
+
+async function start() {
+  if (inApp) {
+    if (inLine && !/openExternalBrowser=1/.test(location.search)) { location.replace(location.pathname + '?openExternalBrowser=1'); return; }   // LINEはこの印を付けると外のブラウザで開き直す
+    show('inapp');
+    return;
+  }
+  if (!standalone) {   // ホーム画面のアイコンから開いたとき以外は、先に追加してもらう（アプリの画面で追加するとアイコンが付かない）
+    if (!isIOS) { $('stepsIOS').classList.add('hide'); $('stepsAndroid').classList.remove('hide'); }
+    show('install');
+    return;
+  }
+  if (!pushOK || store.get('skipPush')) return openApp('');
+  if (Notification.permission === 'denied') { show('denied'); return; }
+  if (Notification.permission === 'default') { show('ask'); return; }
+  try { openApp(await getToken()); } catch (e) { openApp(''); }   // 宛先が取れなくてもアプリは使える
+}
+
+$('allow').addEventListener('click', async () => {   // iPhoneでは、ボタンを押したときにしか許可の確認を出せない
+  $('allow').disabled = true;
+  $('allow').textContent = '設定しています…';
+  try {
+    const p = await Notification.requestPermission();
+    if (p !== 'granted') { show('denied'); return; }
+    openApp(await getToken());
+  } catch (e) { openApp(''); }
+});
+$('skip').addEventListener('click', () => { store.set('skipPush', '1'); openApp(''); });
+
+start();
 </script>
 </body>
 </html>
